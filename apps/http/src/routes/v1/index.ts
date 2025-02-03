@@ -10,12 +10,10 @@ import { JWT_SECRET } from "../../config";
 import { compare, hash } from "../../s_crypt";
 
 router.post("/signup", async (req, res) => {
-  console.log("0-0--0-0-0-000",req.body)
   const paresdData = SignupSchema.safeParse(req.body);
-  console.log("pasrewd dataa",JSON.stringify(paresdData));
   if (!paresdData.success) {
     // console.log("parsed data is incorrect")
-    res.status(400).json({ message: "invalid data", error: paresdData.error });
+    res.status(400).json({ message: "invalid data"});
     return;
   }
 
@@ -33,7 +31,8 @@ router.post("/signup", async (req, res) => {
       userId: user.id,
     });
   } catch (error) {
-    res.status(500).json({ message: error });
+    // console.log("-r-r-rr--r-r-rr-ror",error);
+    res.status(400).json({ message: "User already exists" });
   }
 });
 
@@ -67,9 +66,9 @@ router.post("/signin", async (req, res) => {
       JWT_SECRET
     );
     res.json({
-      token,
+      token
     });
-    console.log(token);
+    // console.log(token);
   } catch (error) {
     res.status(400).json({ message: "internal server error" });
   }

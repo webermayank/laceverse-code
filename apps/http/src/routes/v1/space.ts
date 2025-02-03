@@ -1,7 +1,12 @@
 import { Router } from "express";
-import { AddElementSchema, CreateElementSchema, CreateSpaceSchema, DeleteElementSchema } from "../../types";
+import {
+  AddElementSchema,
+  CreateElementSchema,
+  CreateSpaceSchema,
+  DeleteElementSchema,
+} from "../../types";
 import client from "@laceverse/db/client";
-import { userMiddleware } from "../../middleware/admin";
+import { userMiddleware } from "../../middleware/user";
 export const spaceRouter = Router();
 
 //api/v1/space
@@ -9,7 +14,9 @@ export const spaceRouter = Router();
 spaceRouter.post("/", userMiddleware, async (req, res) => {
   const parseData = CreateSpaceSchema.safeParse(req.body);
   if (!parseData.success) {
+    // console.log("-------0-0-0-0-0-0-,",JSON.stringify(parseData));
     res.status(400).json({ message: parseData.error.message });
+
     return;
   }
   if (!parseData.data.mapId) {
@@ -21,9 +28,12 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
         creatorId: req.userId!,
       },
     });
+
     res.json({ spaceId: space.id });
+    return;
   }
-  const map = await client.map.findUnique({
+
+  const map = await client.map.findFirst({
     where: {
       id: parseData.data.mapId,
     },
@@ -40,6 +50,8 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
 
   //locking the database
   //the transaction will be rolled back if any of the queries fail taht means either both of the function inside transaction works or neither of them
+
+  console.log("map elements lenth",map.mapElements.length)
   let space = await client.$transaction(async () => {
     const space = await client.space.create({
       data: {
@@ -49,6 +61,7 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
         creatorId: req.userId!,
       },
     });
+    console.log(space)
 
     await client.spaceElements.createMany({
       data: map.mapElements.map((element) => ({
@@ -60,6 +73,8 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
     });
     return space;
   });
+      console.log("space crated");
+
   res.json({ spaceId: space.id });
 });
 
@@ -106,7 +121,7 @@ spaceRouter.get("/all", userMiddleware, async (req, res) => {
 spaceRouter.post("/element", async (req, res) => {
   const parseData = AddElementSchema.safeParse(req.body);
   if (!parseData.success) {
-    res.status(400).json({ message:"failed getting data" });
+    res.status(400).json({ message: "failed getting data" });
     return;
   }
 
@@ -120,10 +135,10 @@ spaceRouter.post("/element", async (req, res) => {
       height: true,
     },
   });
-    if (!space) {
-        res.status(400).json({ message: "space not found" });
-        return;
-    }
+  if (!space) {
+    res.status(400).json({ message: "space not found" });
+    return;
+  }
   await client.spaceElements.create({
     data: {
       spaceId: req.body.spaceId,
@@ -132,68 +147,71 @@ spaceRouter.post("/element", async (req, res) => {
       y: req.body.y,
     },
   });
-    res.json({ message: "element added" });
-  
+  res.json({ message: "element added" });
 });
-spaceRouter.delete("/element",userMiddleware,async (req, res) => {
-    const parseData = DeleteElementSchema.safeParse(req.body);
-    if (!parseData.success) {
-        res.status(400).json({ message: "validation failed" });
-        return;
-    }
+spaceRouter.delete("/element", userMiddleware, async (req, res) => {
+  const parseData = DeleteElementSchema.safeParse(req.body);
+  if (!parseData.success) {
+    res.status(400).json({ message: "validation failed" });
+    return;
+  }
 
- const spaceElement =await client.spaceElements.findFirst({
+  const spaceElement = await client.spaceElements.findFirst({
     where: {
-        id: parseData.data.id,
-        },include: {
-            space:true
-        }
-    })  
-    if (!spaceElement?.space.creatorId || spaceElement.space.creatorId !== req.userId) {
-        res.status(400).json({ message: "Unauthorized" });
-        return;
-    }
-    //delte the element
-    await client.spaceElements.delete({
-        where: {
-            id: parseData.data.id,
-        },
-    });
-    res.json({ message: "element deleted" });
+      id: parseData.data.id,
+    },
+    include: {
+      space: true,
+    },
+  });
+  if (
+    !spaceElement?.space.creatorId ||
+    spaceElement.space.creatorId !== req.userId
+  ) {
+    res.status(400).json({ message: "Unauthorized" });
+    return;
+  }
+  //delte the element
+  await client.spaceElements.delete({
+    where: {
+      id: parseData.data.id,
+    },
+  });
+  res.json({ message: "element deleted" });
 });
 
 spaceRouter.get("/:spaceId", async (req, res) => {
-    const space = await client.space.findUnique({
-        where: {
-            id: req.params.spaceId,
-        },include:{
-            elements:{
-                include: {
-                    element: true,
-                }
-            }
-
-        }
-    })
-    if (!space) {
-        res.status(400).json({ message: "space not found" });
-        return;
-    }
-    res.json({
-        dimensions: `${space.width}x${space.height}`,
-        id: space.id,
-        name: space.name,
-        elements: space.elements.map(e => ({
-            id: e.id,
-            element : {
-                id: e.id,
-                imageUrl: e.element.imageurl,
-                width: e.element.width,
-                height: e.element.height,
-                static: e.element.static,
-            },
-            x: e.x,
-            y: e.y
-        }))
-    })
+  const space = await client.space.findUnique({
+    where: {
+      id: req.params.spaceId,
+    },
+    include: {
+      elements: {
+        include: {
+          element: true,
+        },
+      },
+    },
+  });
+  if (!space) {
+    res.status(400).json({ message: "space not found" });
+    return;
+  }
+  res.json({
+    dimensions: `${space.width}x${space.height}`,
+    id: space.id,
+    name: space.name,
+    elements: space.elements.map((e) => ({
+      id: e.id,
+      element: {
+        id: e.id,
+        imageUrl: e.element.imageurl,
+        width: e.element.width,
+        height: e.element.height,
+        static: e.element.static,
+      },
+      x: e.x,
+      y: e.y,
+    })),
+  });
 });

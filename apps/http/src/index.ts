@@ -1,6 +1,5 @@
 import express from 'express';
 import { router } from './routes/v1';
-import client from "@laceverse/db/client" ; // here we are importing client from @laceverse/db which is a local package
 const app = express();
 app.use(express.json());
 

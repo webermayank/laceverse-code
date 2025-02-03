@@ -3,7 +3,7 @@ import z from 'zod';
 export const SignupSchema = z.object({
   username: z.string(),
   password: z.string(),
-  type: z.enum(["user", "admin"]).optional(),
+  type: z.enum(["user", "admin"]),
 });
 
 export const SigninSchema = z.object({
@@ -49,8 +49,8 @@ export const CreateMapSchema = z.object({
   name: z.string(),
     thumbnail: z.string(),
     dimensions: z.string().regex(/^[0-9]{1,4}x[0-9]{1,4}$/),
-    defaultElement: z.array(z.object({
-        elemntId: z.string(),
+    defaultElements: z.array(z.object({
+        elementId: z.string(),
         x: z.number(),
         y: z.number(),
     }))
