@@ -20,7 +20,7 @@ model User {
   avatarId String
   role     Role
   spaces Space[]
-  avatar Avatar @relation(fields: [avatarId], references: [id])
+  avatar Avatar? @relation(fields: [avatarId], references: [id])
 }
 
 model spaceElements {
@@ -49,6 +49,7 @@ model Element {
   width    Int
   height   Int
   imageurl String
+  static  Boolean
   spaces spaceElements[]
   mapElements mapElements[]
 }
@@ -57,7 +58,7 @@ model Space {
   id        String  @id @unique @default(cuid())
   name      String
   width     Int
-  height    Int?
+  height    Int
   thumbnail String?
   creatorId String   //this willbe the forigen key to the user table 
   creator   User  @relation(fields: [creatorId], references: [id])
@@ -69,6 +70,7 @@ model Map {
   name   String
   width  Int
   height Int
+  thumbnail String
   mapElements mapElements[]
 }
 
