@@ -91,7 +91,8 @@ router.get("/avatars", async (req, res) => {
     id:e.id,
     name:e.name,
     imageurl:e.imageurl,
-  }))}); 
+  }))});
+  // console.log("avavvvvvvvvvvaaaaaaaaaaaaattttttttaaaaaarrrrrrrrr",avatars); 
 });
 
 router.use("/user", userRouter);
