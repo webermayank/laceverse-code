@@ -10,9 +10,10 @@ import {
 } from "../../types";
 import client from "@laceverse/db/client";
 export const adminRouter = Router();
+adminRouter.use(adminMiddleware)
 
 //api/v1/space
-adminRouter.post("/element", adminMiddleware, async (req, res) => {
+adminRouter.post("/element", async (req, res) => {
   const parseData = CreateElementSchema.safeParse(req.body);
   if (!parseData.success) {
     res.status(400).json({ message: "validation failed" });
@@ -33,7 +34,7 @@ adminRouter.post("/element", adminMiddleware, async (req, res) => {
   });
 });
 
-adminRouter.put("/element/:elementId", adminMiddleware, async (req, res) => {
+adminRouter.put("/element/:elementId", async (req, res) => {
   const parseData = UpdateElementSchema.safeParse(req.body);
   if (!parseData.success) {
     res.status(400).json({ message: "validation failed" });
@@ -45,7 +46,7 @@ adminRouter.put("/element/:elementId", adminMiddleware, async (req, res) => {
   });
   res.json({ message: "Element updated successfully" });
 });
-adminRouter.post("/avatar", adminMiddleware, async (req, res) => {
+adminRouter.post("/avatar", async (req, res) => {
   const parseData = CreateAvatarSchema.safeParse(req.body);
   if (!parseData.success) {
     res.status(400).json({ message: "validation failed" });
@@ -62,7 +63,7 @@ adminRouter.post("/avatar", adminMiddleware, async (req, res) => {
     id: avatar.id,
   });
 });
-adminRouter.post("/map", adminMiddleware, async (req, res) => {
+adminRouter.post("/map", async (req, res) => {
   const parseData = CreateMapSchema.safeParse(req.body);
   console.log("parseData")
   console.log(parseData)

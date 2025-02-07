@@ -6,36 +6,32 @@ import { userMiddleware } from "../../middleware/user";
 export const userRouter = Router();
 
 userRouter.post("/metadata", userMiddleware, async (req, res) => {
-  const parseData = UpdateMetaData.safeParse(req.body);
-
-  if (!parseData.success) {
-    console.log("parsed data not ");
-    res.status(400).json({ message: "invalid data" });
+  const parsedData = UpdateMetaData.safeParse(req.body);
+  if (!parsedData.success) {
+    console.log("parsed data incorrect");
+    res.status(400).json({ message: "Validation failed" });
     return;
   }
-  console.log("13-13666666666-1", req.body);
-
   try {
-  const updateMeta =await client.user.update({
+    await client.user.update({
       where: {
         id: req.userId,
       },
       data: {
-        avatarId: parseData.data.avatarId,
+        avatarId: parsedData.data.avatarId,
       },
     });
-    res.json({ message: "Metadata has been updated" });
-  } catch (error) {
-    console.error("Error while updating metadata:", (error as Error).message);
-    console.error("Error while updating metadata:", error);
+    res.json({ message: "Metadata updated" });
+  } catch (e) {
+    console.log("error");
     res.status(400).json({ message: "Internal server error" });
   }
 });
 
 //getting others avatar id , to show on map
-userRouter.get("/metadata/bulk", userMiddleware, async (req, res) => {
-  const userIdsString = (req.query.ids ?? "[]") as string;
-  const userIds = (userIdsString).slice(1, userIdsString?.length - 1).split(","); //convert to array
+userRouter.get("/metadata/bulk", async (req, res) => {
+  const userIdString = (req.query.ids ?? "[]") as string;
+  const userIds = userIdString.slice(1, userIdString?.length - 1).split(",");
   console.log(userIds);
   const metadata = await client.user.findMany({
     where: {
@@ -45,13 +41,14 @@ userRouter.get("/metadata/bulk", userMiddleware, async (req, res) => {
     },
     select: {
       avatar: true,
-      id: true
+      id: true,
     },
   });
+
   res.json({
-    avatars: metadata.map(m => ({
+    avatars: metadata.map((m) => ({
       userId: m.id,
-      avatarId: m.avatar?.imageurl
+      avatarId: m.avatar?.imageurl,
     })),
   });
 });
