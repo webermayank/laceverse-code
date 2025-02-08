@@ -1,0 +1,29 @@
+# Node.js dependencies (they will be installed inside the container)
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Git repository files
+.git
+.gitignore
+
+# Logs and temp files
+logs
+*.log
+*.tmp
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+
+# Docker cache
+docker-compose.override.yml
+.DS_Store
+
+# Environment variables (important for security!)
+.env
+.env.local
+.env.development
+.env.production

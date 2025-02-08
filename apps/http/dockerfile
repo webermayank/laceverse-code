@@ -1,0 +1,30 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install necessary dependencies for Prisma
+RUN apk add --no-cache openssl
+
+# Copy root package.json and workspace package.json files
+COPY package*.json ./
+COPY packages/db/package*.json ./packages/db/
+COPY apps/http/package*.json ./apps/http/
+
+# Install dependencies
+RUN npm install
+
+# Copy Prisma schema and generate client
+COPY packages/db/prisma ./packages/db/prisma
+RUN npx prisma generate --schema ./packages/db/prisma/schema.prisma
+
+# Copy application code
+COPY apps/http ./apps/http
+COPY tsconfig.json ./
+COPY packages/db ./packages/db
+
+# Build TypeScript
+WORKDIR /app/apps/http
+RUN npm install express
+RUN npm run build
+
+CMD ["node", "dist/index.js"]

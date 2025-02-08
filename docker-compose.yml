@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  http-service:
+    build:
+      context: .
+      dockerfile: apps/http/dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:laceverse@db:5432/postgres
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  websocket-service:
+    build:
+      context: .
+      dockerfile: apps/web_sockets/dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:laceverse@db:5432/postgres
+      - PORT=3001
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=laceverse
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prisma-migrate:
+    build:
+      context: .
+      dockerfile: packages/db/dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:laceverse@db:5432/postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
