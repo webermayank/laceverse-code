@@ -95,6 +95,8 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
 });
 
 spaceRouter.delete("/element", userMiddleware, async (req, res) => {
+      console.log("req.params.spaceId", req.params.spaceId);
+
   const parseData = DeleteElementSchema.safeParse(req.body);
   if (!parseData.success) {
     res.status(400).json({ message: "validation failed" });
@@ -124,7 +126,7 @@ spaceRouter.delete("/element", userMiddleware, async (req, res) => {
   });
   res.json({ message: "element deleted" });
 });
-spaceRouter.delete("/:spaceId",async (req, res) => {
+spaceRouter.delete("/:spaceId",userMiddleware,async (req, res) => {
   const space = await client.space.findUnique({
     where: {
       id: req.params.spaceId,
@@ -167,9 +169,13 @@ spaceRouter.get("/all", userMiddleware, async (req, res) => {
   });
 });
 
-spaceRouter.post("/element", async (req, res) => {
+spaceRouter.post("/element",userMiddleware, async (req, res) => {
   const parseData = AddElementSchema.safeParse(req.body);
   if (!parseData.success) {
+      console.log(
+        "-----=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+      );
+
     res.status(400).json({ message: "failed getting data" });
     return;
   }
@@ -177,7 +183,7 @@ spaceRouter.post("/element", async (req, res) => {
   const space = await client.space.findUnique({
     where: {
       id: req.body.spaceId,
-      creatorId: req.userId,
+      creatorId: req.userId!,
     },
     select: {
       width: true,
@@ -196,7 +202,6 @@ spaceRouter.post("/element", async (req, res) => {
       .json({ message: "point is not inside the space boundaries" });
     return;
   }
-
   if (!space) {
     res.status(400).json({ message: "space not found" });
     return;
@@ -204,7 +209,7 @@ spaceRouter.post("/element", async (req, res) => {
   await client.spaceElements.create({
     data: {
       spaceId: req.body.spaceId,
-      elementId: req.body.elementID,
+      elementId: req.body.elementId,
       x: req.body.x,
       y: req.body.y,
     },
@@ -232,8 +237,6 @@ spaceRouter.get("/:spaceId", async (req, res) => {
   }
   res.json({
     dimensions: `${space.width}x${space.height}`,
-    id: space.id,
-    name: space.name,
     elements: space.elements.map((e) => ({
       id: e.id,
       element: {

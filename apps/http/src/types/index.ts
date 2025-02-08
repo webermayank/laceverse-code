@@ -24,7 +24,7 @@ export const CreateSpaceSchema = z.object({
 
 export const AddElementSchema = z.object({
     spaceId: z.string(),
-    elementID : z.string(),
+    elementId : z.string(),
     x: z.number(),
     y: z.number(),
 });

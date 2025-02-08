@@ -50,6 +50,7 @@ export class User {
             this.ws.close();
             return;
           }
+          this.userId = userId;
           const space = await client.space.findFirst({
             where: { id: spaceId },
           });
@@ -98,7 +99,7 @@ export class User {
             this.y = moveY;
             Room.getInstance().broadcast(
               {
-                type: "moved",
+                type: "movement",
                 payload: {
                   x: this.x,
                   y: this.y,
