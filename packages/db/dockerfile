@@ -1,17 +1,21 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install necessary dependencies for Prisma
-RUN apk add --no-cache openssl
+# Install necessary build tools
+RUN apk add --no-cache libc6-compat openssl1.1-compat
 
-# Copy package files and install dependencies
 COPY package*.json ./
 COPY packages/db/package*.json ./packages/db/
-RUN npm install
-
-# Copy Prisma files
 COPY packages/db/prisma ./packages/db/prisma
 
-WORKDIR /app/packages/db
-CMD ["npx", "prisma", "migrate", "deploy", "--schema", "./prisma/schema.prisma"]
+RUN npm install
+RUN cd packages/db && npx prisma generate
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/db/prisma ./prisma
+
+CMD ["npm", "run", "start"]
