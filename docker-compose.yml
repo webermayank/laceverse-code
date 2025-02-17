@@ -1,16 +1,16 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
     image: postgres:14
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: laceverse
       POSTGRES_DB: laceverse
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -22,8 +22,8 @@ services:
       context: .
       dockerfile: packages/db/Dockerfile
     environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/laceverse
-    command: npx prisma migrate deploy
+      DATABASE_URL: postgresql://postgres:laceverse@postgres:5432/laceverse
+      NODE_ENV: production
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,9 +33,10 @@ services:
       context: .
       dockerfile: apps/http/Dockerfile
     environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/laceverse
+      DATABASE_URL: postgresql://postgres:laceverse@postgres:5432/laceverse
       PORT: 3000
       JWT_SECRET: niabdv9h39bbs9
+      NODE_ENV: production
     ports:
       - "3000:3000"
     depends_on:
@@ -47,14 +48,25 @@ services:
       context: .
       dockerfile: apps/web_sockets/Dockerfile
     environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/laceverse
+      DATABASE_URL: postgresql://postgres:laceverse@postgres:5432/laceverse
       PORT: 8080
       JWT_PASSWORD: niabdv9h39bbs9
+      NODE_ENV: production
     ports:
       - "8080:8080"
     depends_on:
       prisma-migrate:
         condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/fe/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - http
+      - websocket
 
 volumes:
   postgres_data:

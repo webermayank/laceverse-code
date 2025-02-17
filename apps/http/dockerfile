@@ -1,9 +1,9 @@
-FROM node:18-alpine AS builder
+FROM node:18-bullseye AS builder
 
 WORKDIR /app
 
-# Install necessary build tools
-RUN apk add --no-cache libc6-compat openssl1.1-compat
+# Install OpenSSL
+RUN apt-get update -y && apt-get install -y openssl
 
 COPY package*.json ./
 COPY packages/db/package*.json ./packages/db/
@@ -11,22 +11,28 @@ COPY packages/db/prisma ./packages/db/prisma
 COPY apps/http/package*.json ./apps/http/
 
 RUN npm install
+
+# Generate Prisma Client with the correct binary targets
 RUN cd packages/db && npx prisma generate
 
+# Copy source code
 COPY . .
+
+# Build the application
 RUN npm run build --workspace=http
 
-FROM node:18-alpine AS runner
+FROM node:18-bullseye-slim AS runner
 WORKDIR /app
 
-RUN apk add --no-cache openssl1.1-compat
+# Install OpenSSL in the runner stage
+RUN apt-get update -y && apt-get install -y openssl
 
 COPY --from=builder /app/apps/http/dist ./dist
-COPY --from=builder /app/apps/http/package.json .
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/db/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 
-ENV NODE_ENV production
 EXPOSE 3000
 
 CMD ["node", "dist/index.js"]

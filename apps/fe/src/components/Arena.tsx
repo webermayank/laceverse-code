@@ -1,232 +1,219 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { WebSocketService } from "../services/WebSocket";
+import { Avatar } from "../classes/Avatar";
+import {
+  Position,
+  User,
+  SpaceJoinedPayload,
+  UserJoinedPayload,
+  UserLeftPayload,
+  MovementPayload,
+  MovementRejectedPayload,
+} from "../types/Websocket";
 
-const Arena = () => {
-  const canvasRef = useRef<any>(null);
-  const wsRef = useRef<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>({});
-  const [users, setUsers] = useState(new Map());
-  const [params, setParams] = useState({ token: "", spaceId: "" });
+const BLOCK_SIZE = 20;
 
-  // Initialize WebSocket connection and handle URL params
+const Arena: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wsRef = useRef<WebSocketService | null>(null);
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string>("");
+
+  const token = searchParams.get("token");
+  const spaceId = searchParams.get("spaceId");
+
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token") || "";
-    const spaceId = urlParams.get("spaceId") || "";
-    setParams({ token, spaceId });
+    if (!token || !spaceId) {
+      setError("Missing token or spaceId");
+      return;
+    }
 
-    // Initialize WebSocket
-    wsRef.current = new WebSocket("ws://localhost:8080"); // Replace with your WS_URL
+    const wsUrl = "ws://localhost:8080";
+    if (!wsUrl) {
+      setError("WebSocket URL not configured");
+      return;
+    }
 
-    wsRef.current.onopen = () => {
-      // Join the space once connected
-      wsRef.current.send(
-        JSON.stringify({
-          type: "join",
-          payload: {
-            spaceId,
-            token,
-          },
-        })
-      );
+    const ws = new WebSocketService(wsUrl);
+    wsRef.current = ws;
+
+    const connect = async () => {
+      try {
+        await ws.connect();
+
+        ws.send("join", {
+          spaceId,
+          token,
+        });
+
+        ws.on<SpaceJoinedPayload>("space-joined", (payload) => {
+          setPosition(payload.spawn);
+          setUsers(payload.users);
+          setCurrentUserId(payload.userId);
+        });
+
+        ws.on<UserJoinedPayload>("user-joined", (payload) => {
+          setUsers((prev) => [
+            ...prev,
+            {
+              userId: payload.userId,
+              x: payload.x,
+              y: payload.y,
+            },
+          ]);
+        });
+
+        ws.on<UserLeftPayload>("user-left", (payload) => {
+          setUsers((prev) =>
+            prev.filter((user) => user.userId !== payload.userId)
+          );
+        });
+
+        ws.on<MovementPayload>("movement", (payload) => {
+          setUsers((prev) =>
+            prev.map((user) =>
+              user.userId === payload.userId
+                ? { ...user, x: payload.x, y: payload.y }
+                : user
+            )
+          );
+        });
+
+        ws.on<MovementRejectedPayload>("movement-rejected", (payload) => {
+          setPosition({ x: payload.x, y: payload.y });
+        });
+      } catch (error) {
+        setError("WebSocket connection failed");
+        console.error("WebSocket connection failed:", error);
+      }
     };
 
-    wsRef.current.onmessage = (event: any) => {
-      const message = JSON.parse(event.data);
-      handleWebSocketMessage(message);
-    };
+    connect();
 
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
-  }, []);
+  }, [token, spaceId]);
 
-  const handleWebSocketMessage = (message: any) => {
-    switch (message.type) {
-      case "space-joined":
-        // Initialize current user position and other users
-        console.log("set");
-        console.log({
-          x: message.payload.spawn.x,
-          y: message.payload.spawn.y,
-          userId: message.payload.userId,
-        });
-        setCurrentUser({
-          x: message.payload.spawn.x,
-          y: message.payload.spawn.y,
-          userId: message.payload.userId,
-        });
-
-        // Initialize other users from the payload
-        const userMap = new Map();
-        message.payload.users.forEach((user: any) => {
-          userMap.set(user.userId, user);
-        });
-        setUsers(userMap);
-        break;
-
-      case "user-joined":
-        setUsers((prev) => {
-          const newUsers = new Map(prev);
-          newUsers.set(message.payload.userId, {
-            x: message.payload.x,
-            y: message.payload.y,
-            userId: message.payload.userId,
-          });
-          return newUsers;
-        });
-        break;
-
-      case "movement":
-        setUsers((prev) => {
-          const newUsers = new Map(prev);
-          const user = newUsers.get(message.payload.userId);
-          if (user) {
-            user.x = message.payload.x;
-            user.y = message.payload.y;
-            newUsers.set(message.payload.userId, user);
-          }
-          return newUsers;
-        });
-        break;
-
-      case "movement-rejected":
-        // Reset current user position if movement was rejected
-        setCurrentUser((prev: any) => ({
-          ...prev,
-          x: message.payload.x,
-          y: message.payload.y,
-        }));
-        break;
-
-      case "user-left":
-        setUsers((prev) => {
-          const newUsers = new Map(prev);
-          newUsers.delete(message.payload.userId);
-          return newUsers;
-        });
-        break;
-    }
-  };
-
-  // Handle user movement
-  const handleMove = (newX: any, newY: any) => {
-    if (!currentUser) return;
-
-    // Send movement request
-    wsRef.current.send(
-      JSON.stringify({
-        type: "move",
-        payload: {
-          x: newX,
-          y: newY,
-          userId: currentUser.userId,
-        },
-      })
-    );
-  };
-
-  // Draw the arena
   useEffect(() => {
-    console.log("render");
     const canvas = canvasRef.current;
     if (!canvas) return;
-    console.log("below render");
 
     const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!ctx) return;
 
-    // Draw grid
-    ctx.strokeStyle = "#eee";
-    for (let i = 0; i < canvas.width; i += 50) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.height);
-      ctx.stroke();
-    }
-    for (let i = 0; i < canvas.height; i += 50) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(canvas.width, i);
-      ctx.stroke();
-    }
+    const gameLoop = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    console.log("before curerntusert");
-    console.log(currentUser);
-    // Draw current user
-    if (currentUser && currentUser.x) {
-      console.log("drawing myself");
-      console.log(currentUser);
-      ctx.beginPath();
-      ctx.fillStyle = "#FF6B6B";
-      ctx.arc(currentUser.x * 50, currentUser.y * 50, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#000";
-      ctx.font = "14px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("You", currentUser.x * 50, currentUser.y * 50 + 40);
-    }
-
-    // Draw other users
-    users.forEach((user) => {
-      if (!user.x) {
-        return;
+      // Draw grid
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < canvas.width; i += BLOCK_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
       }
-      console.log("drawing other user");
-      console.log(user);
-      ctx.beginPath();
-      ctx.fillStyle = "#4ECDC4";
-      ctx.arc(user.x * 50, user.y * 50, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#000";
-      ctx.font = "14px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(`User ${user.userId}`, user.x * 50, user.y * 50 + 40);
-    });
-  }, [currentUser, users]);
+      for (let i = 0; i < canvas.height; i += BLOCK_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
 
-  const handleKeyDown = (e: any) => {
-    if (!currentUser) return;
+      // Draw current player
+      const playerAvatar = new Avatar(position.x, position.y, "#4CAF50", "You");
+      playerAvatar.draw(ctx, BLOCK_SIZE);
 
-    const { x, y } = currentUser;
-    switch (e.key) {
-      case "ArrowUp":
-        handleMove(x, y - 1);
-        break;
-      case "ArrowDown":
-        handleMove(x, y + 1);
-        break;
-      case "ArrowLeft":
-        handleMove(x - 1, y);
-        break;
-      case "ArrowRight":
-        handleMove(x + 1, y);
-        break;
-    }
-  };
+      // Draw other users
+      users.forEach((user) => {
+        if (user.userId !== currentUserId) {
+          const userAvatar = new Avatar(
+            user.x,
+            user.y,
+            "#2196F3",
+            `User ${user.userId}`
+          );
+          userAvatar.draw(ctx, BLOCK_SIZE);
+        }
+      });
+
+      requestAnimationFrame(gameLoop);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!wsRef.current) return;
+
+      const newPosition = { ...position };
+
+      switch (e.key) {
+        case "ArrowUp":
+        case "w":
+          newPosition.y -= 1;
+          break;
+        case "ArrowDown":
+        case "s":
+          newPosition.y += 1;
+          break;
+        case "ArrowLeft":
+        case "a":
+          newPosition.x -= 1;
+          break;
+        case "ArrowRight":
+        case "d":
+          newPosition.x += 1;
+          break;
+        default:
+          return;
+      }
+
+      if (newPosition.x !== position.x || newPosition.y !== position.y) {
+        wsRef.current.send("move", {
+          x: newPosition.x,
+          y: newPosition.y,
+          userId: currentUserId,
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    gameLoop();
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [position, users, currentUserId]);
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
 
   return (
-    <div className="p-4" onKeyDown={handleKeyDown} tabIndex={0}>
-      <h1 className="text-2xl font-bold mb-4">Arena</h1>
-      <div className="mb-4">
-        <p className="text-sm text-gray-600">Token: {params.token}</p>
-        <p className="text-sm text-gray-600">Space ID: {params.spaceId}</p>
-        <p className="text-sm text-gray-600">
-          Connected Users: {users.size + (currentUser ? 1 : 0)}
-        </p>
+    <div className="arena-container">
+      <div className="arena-header">
+        <h2>Arena</h2>
+        <div className="arena-info">
+          <div>Space ID: {spaceId}</div>
+          <div>Users Online: {users.length + 1}</div>
+        </div>
       </div>
-      <div className="border rounded-lg overflow-hidden">
+      <div className="canvas-container">
         <canvas
           ref={canvasRef}
-          width={1000}
-          height={1000}
-          className="bg-white"
+          width={800}
+          height={600}
+          className="game-canvas"
         />
+        <div className="position-info">
+          Position: ({position.x}, {position.y})
+        </div>
       </div>
-      <p className="mt-2 text-sm text-gray-500">
-        Use arrow keys to move your avatar
-      </p>
     </div>
   );
 };

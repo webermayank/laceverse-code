@@ -1,28 +1,38 @@
-FROM node:18-alpine
+FROM node:18-bullseye AS builder
 
 WORKDIR /app
 
-# Install necessary dependencies for Prisma
-RUN apk add --no-cache openssl
+# Install OpenSSL
+RUN apt-get update -y && apt-get install -y openssl
 
-# Copy root package.json and workspace package.json files
 COPY package*.json ./
 COPY packages/db/package*.json ./packages/db/
+COPY packages/db/prisma ./packages/db/prisma
 COPY apps/web_sockets/package*.json ./apps/web_sockets/
 
-# Install dependencies
 RUN npm install
 
-# Copy Prisma schema and generate client
-COPY packages/db/prisma ./packages/db/prisma
-RUN npx prisma generate --schema=./packages/db/prisma/schema.prisma
+# Generate Prisma Client with the correct binary targets
+RUN cd packages/db && npx prisma generate
 
-# Copy application code
-COPY apps/web_sockets ./apps/web_sockets
-COPY packages/db ./packages/db
+# Copy source code
+COPY . .
 
-# Install missing dependencies
-WORKDIR /app/apps/web_sockets
-RUN npm run build
+# Build the application
+RUN npm run build --workspace=web_sockets
+
+FROM node:18-bullseye-slim AS runner
+WORKDIR /app
+
+# Install OpenSSL in the runner stage
+RUN apt-get update -y && apt-get install -y openssl
+
+COPY --from=builder /app/apps/web_sockets/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/db/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+
+EXPOSE 8080
 
 CMD ["node", "dist/index.js"]
