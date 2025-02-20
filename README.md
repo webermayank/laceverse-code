@@ -1,84 +1,95 @@
-# Turborepo starter
+# Laceverse - Collaborative Virtual Space
 
-This Turborepo starter is maintained by the Turborepo core team.
+## About
+Laceverse is a modern, real-time collaborative virtual space platform that enables users to interact, collaborate, and create in shared digital environments. Built with scalability and performance in mind, it offers a seamless experience across web platforms.
 
-## Using this example
+## Overview
+Laceverse is a full-stack application consisting of:
+- **Frontend**: Interactive user interface built with React and TypeScript
+- **Backend**: REST API for core application logic
+- **WebSocket Server**: Real-time communication layer
+- **Database**: Persistent data storage with Prisma ORM
+- **Shared Packages**: Reusable components and configurations
 
-Run the following command:
+## Tech Stack
+### Core Technologies
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS
+- **Backend**: Node.js, Express, TypeScript
+- **Database**: Prisma ORM, PostgreSQL
+- **Real-time**: WebSocket, Room-based architecture
+- **Build System**: Turborepo, pnpm
 
-```sh
-npx create-turbo@latest
+### Infrastructure
+- Docker
+- Nginx
+- CI/CD ready
+
+## Features
+- Real-time collaboration
+- User authentication and authorization
+- Room-based interaction system
+- Customizable avatars
+- Responsive UI with Tailwind CSS
+- Type-safe codebase with TypeScript
+- Scalable architecture
+
+## Installation & Contribution
+### Prerequisites
+- Node.js (v18+)
+- pnpm
+- Docker
+- PostgreSQL
+
+### Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-org/laceverse.git
+   cd laceverse
+   ```
+
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+3. Set up environment variables:
+   - Create `.env` files in `apps/fe`, `apps/http`, and `apps/web_sockets`
+   - Refer to `.env.example` for required variables
+
+4. Start the development environment:
+   ```bash
+   docker-compose up -d
+   pnpm dev
+   ```
+
+### Contribution Guidelines
+1. Fork the repository
+2. Create a new branch for your feature/bugfix
+3. Follow the existing code style and patterns
+4. Write tests for new features
+5. Submit a pull request with a clear description
+
+## Project Structure
+```
+laceverse/
+├── apps/
+│   ├── fe/               # Frontend application
+│   ├── http/             # REST API
+│   └── web_sockets/      # WebSocket server
+├── packages/
+│   ├── db/               # Database layer
+│   ├── eslint-config/    # ESLint configurations
+│   ├── typescript-config/ # TypeScript configurations
+│   └── ui/               # Shared UI components
+└── docker-compose.yml    # Docker configuration
 ```
 
-## What's inside?
+## Acknowledgements
+- Vite for fast frontend development
+- Tailwind CSS for utility-first styling
+- Prisma for type-safe database access
+- Turborepo for monorepo management
+- WebSocket for real-time communication
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+## License
+[MIT License](LICENSE)
