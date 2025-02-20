@@ -44,12 +44,14 @@ Laceverse is a full-stack application consisting of:
 1. Clone the repository:
    ```bash
    git clone https://github.com/your-org/laceverse.git
-   cd laceverse
+   cd laceverse-code
    ```
 
-2. Install dependencies:
+2. Install dependencies: each one by one 
    ```bash
-   pnpm install
+   cd apps/fe  && npm install
+   cd apps/http  && npm install
+   cd apps/web_sockets  && npm install
    ```
 
 3. Set up environment variables:
@@ -71,7 +73,7 @@ Laceverse is a full-stack application consisting of:
 
 ## Project Structure
 ```
-laceverse/
+laceverse-code/
 ├── apps/
 │   ├── fe/               # Frontend application
 │   ├── http/             # REST API
