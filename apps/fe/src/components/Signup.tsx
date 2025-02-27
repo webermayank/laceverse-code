@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { VITE_HTTP_URL } from "./Config";
+import { VITE_HTTP_URL } from "../Config";
 
 interface SignupProps {
   onClose?: () => void; // Optional prop for closing the modal
@@ -21,7 +21,7 @@ const Signup: React.FC<SignupProps> = ({ onClose }) => {
         type,
       });
       setMessage(`Signup successful! User ID: ${response.data.userId}`);
-      console.log(response.data.token)
+      console.log(response.data.token);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         // Log the error response from the server

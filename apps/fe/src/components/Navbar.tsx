@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../images/logo.png";
-import Hero from "./Hero";
+// import Hero from "./Hero";
 
 const Navbar: React.FC = () => {
   return (
@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
           Sign Up
         </Link>
       </div>
-    </nav><Hero />
+    </nav>
     </>
   );
 };
