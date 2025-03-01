@@ -6,7 +6,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: { username: string; role: string } | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: (navigate: (path: string) => void) => void;
 }
 
 interface LoginResponse {
@@ -68,12 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               const response = await API.post<LoginResponse>("/refresh-token");
               localStorage.setItem("token", response.data.token);
             } catch (error) {
-              logout();
+              logout(() => {});
             }
           }, refreshTime);
         }
       } catch (error) {
-        logout();
+        logout(() => {});
       }
     }
   }, []);
@@ -99,15 +99,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       setIsAuthenticated(true);
     } catch (error) {
-      logout();
+      logout(() => {});
       throw error;
     }
   };
 
-  const logout = () => {
+  const logout = (navigate: (path: string) => void) => {
     localStorage.removeItem("token");
     setIsAuthenticated(false);
     setUser(null);
+    navigate("/login"); // Redirect to login page
   };
 
   return (

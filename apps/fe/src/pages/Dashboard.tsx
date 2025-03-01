@@ -1,8 +1,14 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout(navigate);
+  };
 
   if (!user) {
     return <p>Loading...</p>;
@@ -17,6 +23,12 @@ const Dashboard: React.FC = () => {
       ) : (
         <p>You are logged in as a user.</p>
       )}
+      <button
+        onClick={handleLogout}
+        className="mt-4 w-full py-2 px-4 bg-red-500 text-white font-semibold rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+      >
+        Logout
+      </button>
     </div>
   );
 };
