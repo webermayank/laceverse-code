@@ -1,10 +1,10 @@
 import React from "react";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
-import Arena from "./components/Arena";
+import { Routes, Route } from "react-router-dom";
+// import Arena from "./components/Arena";
 import Navbar from "./components/Navbar";
 import "./App.css";
 import Signup from "./components/Signup";
-import ProtectedRoute from "./components/ProjectedRoutes";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import { AuthProvider } from "./context/AuthContext";
@@ -13,12 +13,10 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {" "}
-        {/* ✅ No need for BrowserRouter inside App.tsx */}
         <Route path="/" element={<Navbar />} />
+        {/* <Route path="/" element={<Arena />} /> */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/arena" element={<Arena />} />
         <Route
           path="/dashboard"
           element={
@@ -27,7 +25,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navbar />} />
+        <Route path="*" element={<p>Page not found</p>} />
       </Routes>
     </AuthProvider>
   );

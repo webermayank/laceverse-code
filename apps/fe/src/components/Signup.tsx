@@ -1,12 +1,24 @@
-import axios from "axios";
+// import axios from "axios";
 import React, { useState } from "react";
-import { VITE_HTTP_URL } from "../Config";
+// import { VITE_HTTP_URL } from "../Config";
+import { useNavigate } from "react-router-dom";
+import API from "../api";
+import { useAuth } from "../context/AuthContext";
+
+// // Define the expected API response structure
+// interface SignupResponse {
+//   userId: string;
+//   token: string;
+// }
 
 interface SignupProps {
   onClose?: () => void; // Optional prop for closing the modal
 }
 
 const Signup: React.FC<SignupProps> = ({ onClose }) => {
+  const { login } = useAuth();
+
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [type, setType] = useState("user");
@@ -14,25 +26,29 @@ const Signup: React.FC<SignupProps> = ({ onClose }) => {
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
+    setMessage("");
+
     try {
-      const response = await axios.post(`${VITE_HTTP_URL}/signup`, {
+      await API.post("/signup", {
         username,
         password,
         type,
       });
-      setMessage(`Signup successful! User ID: ${response.data.userId}`);
-      console.log(response.data.token);
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        // Log the error response from the server
-        console.error("Error response:", error.response.data);
-        setMessage(
-          `Signup failed: ${error.response.data.message || "Please try again."}`
-        );
-      } else {
-        console.error("Error:", error);
-        setMessage("Signup failed. Please try again.");
+
+      try {
+        await login(username, password);
+        setMessage("Signup successful! Redirecting...");
+        setTimeout(() => navigate("/dashboard"), 1500);
+      } catch (loginError: any) {
+        console.error("Auto-login failed:", loginError);
+        setMessage("Signup successful! Please log in.");
+        setTimeout(() => navigate("/login"), 1500);
       }
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      setMessage(
+        error?.response?.data?.message || "Signup failed. Please try again."
+      );
     }
   };
 
@@ -93,6 +109,17 @@ const Signup: React.FC<SignupProps> = ({ onClose }) => {
         </button>
       </form>
       {message && <p className="mt-4 text-sm text-accent">{message}</p>}
+      <div className="mt-4 text-center">
+        <p className="text-secondary">
+          Already have an account?{" "}
+          <button
+            onClick={() => navigate("/login")}
+            className="text-primary hover:text-accent underline"
+          >
+            Log in here
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

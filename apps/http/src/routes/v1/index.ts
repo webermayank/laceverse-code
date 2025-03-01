@@ -13,7 +13,7 @@ router.post("/signup", async (req, res) => {
   const paresdData = SignupSchema.safeParse(req.body);
   if (!paresdData.success) {
     // console.log("parsed data is incorrect")
-    res.status(400).json({ message: "invalid data"});
+    res.status(400).json({ message: "invalid data" });
     return;
   }
 
@@ -62,12 +62,14 @@ router.post("/signin", async (req, res) => {
       return;
     }
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      JWT_SECRET
+      {
+        userId: user.id,
+        role: user.role,
+      },
+      JWT_SECRET,
+      { expiresIn: "300h" }
     );
-    res.json({
-      token
-    });
+    res.json({ token });
     // console.log(token);
   } catch (error) {
     res.status(400).json({ message: "internal server error" });
@@ -75,24 +77,28 @@ router.post("/signin", async (req, res) => {
 });
 
 //to see the all available elements , it works idependently
-router.get("/elements",async (req, res) => {
+router.get("/elements", async (req, res) => {
   const elements = await client.element.findMany();
-  res.json({ elements: elements.map(e=>({
-    id:e.id,
-    imagerrl: e.imageurl,
-    static:e.static,
-    width: e.width,
-    height: e.height,
-  }))});
+  res.json({
+    elements: elements.map((e) => ({
+      id: e.id,
+      imagerrl: e.imageurl,
+      static: e.static,
+      width: e.width,
+      height: e.height,
+    })),
+  });
 });
 router.get("/avatars", async (req, res) => {
-  const avatars =await client.avatar.findMany();
-  res.json({avatars:avatars.map(e=>({
-    id:e.id,
-    name:e.name,
-    imageurl:e.imageurl,
-  }))});
-  // console.log("avavvvvvvvvvvaaaaaaaaaaaaattttttttaaaaaarrrrrrrrr",avatars); 
+  const avatars = await client.avatar.findMany();
+  res.json({
+    avatars: avatars.map((e) => ({
+      id: e.id,
+      name: e.name,
+      imageurl: e.imageurl,
+    })),
+  });
+  // console.log("avavvvvvvvvvvaaaaaaaaaaaaattttttttaaaaaarrrrrrrrr",avatars);
 });
 
 router.use("/user", userRouter);
